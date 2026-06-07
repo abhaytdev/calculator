@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator — Abhay Singh</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0a0f;--surface:#12121a;--card:#1a1a26;--border:#2a2a3d;
+    --accent:#7c6aff;--text:#f0effe;--muted:#7a7a9a;
+    --btn:#1e1e2e;--btn-hover:#28283d;--eq:#7c6aff;--op:#2d2a4a;
+  }
+  body{background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'DM Sans',sans-serif;color:var(--text);}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(124,106,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(124,106,255,0.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+  .wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:28px;}
+  .title{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+  .calc{background:var(--card);border:1px solid var(--border);border-radius:28px;padding:24px;width:320px;box-shadow:0 30px 80px rgba(0,0,0,0.5);}
+  .display{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 20px 14px;margin-bottom:18px;text-align:right;min-height:90px;display:flex;flex-direction:column;justify-content:flex-end;}
+  .display-expr{font-size:0.82rem;color:var(--muted);min-height:20px;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .display-val{font-family:'Syne',sans-serif;font-size:2.4rem;font-weight:800;letter-spacing:-1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  .btn{padding:18px 10px;border:1px solid var(--border);border-radius:14px;background:var(--btn);color:var(--text);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:500;cursor:pointer;transition:all 0.15s;user-select:none;}
+  .btn:hover{background:var(--btn-hover);transform:translateY(-1px);}
+  .btn:active{transform:scale(0.95);}
+  .btn.op{background:var(--op);color:var(--accent);border-color:rgba(124,106,255,0.25);font-size:1.1rem;}
+  .btn.op:hover{background:#36335a;}
+  .btn.eq{background:var(--accent);border-color:var(--accent);color:#fff;font-size:1.2rem;}
+  .btn.eq:hover{background:#9580ff;box-shadow:0 8px 24px rgba(124,106,255,0.35);}
+  .btn.clear{color:#ff6a8a;border-color:rgba(255,106,138,0.2);}
+  .btn.clear:hover{background:rgba(255,106,138,0.1);}
+  .btn.zero{grid-column:span 2;}
+  .btn.special{color:var(--muted);font-size:0.9rem;}
+  .tag{font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="title">Calculator</div>
+  <div class="calc">
+    <div class="display">
+      <div class="display-expr" id="expr"></div>
+      <div class="display-val" id="display">0</div>
+    </div>
+    <div class="grid">
+      <button class="btn clear special" onclick="clearAll()">AC</button>
+      <button class="btn special" onclick="toggleSign()">+/-</button>
+      <button class="btn special" onclick="percent()">%</button>
+      <button class="btn op" onclick="setOp('/')">÷</button>
+
+      <button class="btn" onclick="num('7')">7</button>
+      <button class="btn" onclick="num('8')">8</button>
+      <button class="btn" onclick="num('9')">9</button>
+      <button class="btn op" onclick="setOp('*')">×</button>
+
+      <button class="btn" onclick="num('4')">4</button>
+      <button class="btn" onclick="num('5')">5</button>
+      <button class="btn" onclick="num('6')">6</button>
+      <button class="btn op" onclick="setOp('-')">−</button>
+
+      <button class="btn" onclick="num('1')">1</button>
+      <button class="btn" onclick="num('2')">2</button>
+      <button class="btn" onclick="num('3')">3</button>
+      <button class="btn op" onclick="setOp('+')">+</button>
+
+      <button class="btn zero" onclick="num('0')">0</button>
+      <button class="btn" onclick="dot()">.</button>
+      <button class="btn eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+  <div class="tag">Built by Abhay Singh</div>
+</div>
+<script>
+  let current='0', prev='', op=null, fresh=false;
+  const disp=()=>document.getElementById('display').textContent=current.length>10?parseFloat(current).toExponential(4):current;
+  const expr=()=>document.getElementById('expr').textContent=prev&&op?prev+' '+(op==='/'?'÷':op==='*'?'×':op):'';
+  function num(n){
+    if(fresh){current=n;fresh=false;}
+    else current=current==='0'?n:current+n;
+    if(current.length>12)current=current.slice(0,12);
+    disp();
+  }
+  function dot(){
+    if(fresh){current='0.';fresh=false;}
+    else if(!current.includes('.'))current+='.';
+    disp();
+  }
+  function setOp(o){
+    if(op&&!fresh)calculate();
+    prev=current;op=o;fresh=true;expr();
+  }
+  function calculate(){
+    if(!op||!prev)return;
+    let a=parseFloat(prev),b=parseFloat(current),r;
+    if(op==='+'&&(r=a+b)||op==='-'&&(r=a-b)||op==='*'&&(r=a*b)||op==='/'&&(r=b!==0?a/b:'Error'));
+    else r=op==='+'?a+b:op==='-'?a-b:op==='*'?a*b:b!==0?a/b:'Error';
+    document.getElementById('expr').textContent=prev+(op==='/'?'÷':op==='*'?'×':op)+current+' =';
+    current=r==='Error'?'Error':String(parseFloat(r.toFixed(8)));
+    op=null;prev='';fresh=true;disp();
+  }
+  function clearAll(){current='0';prev='';op=null;fresh=false;disp();document.getElementById('expr').textContent='';}
+  function toggleSign(){current=String(parseFloat(current)*-1);disp();}
+  function percent(){current=String(parseFloat(current)/100);disp();}
+  document.addEventListener('keydown',e=>{
+    if(e.key>='0'&&e.key<='9')num(e.key);
+    else if(e.key==='.')dot();
+    else if(e.key==='+'||e.key==='-'||e.key==='*'||e.key==='/')setOp(e.key);
+    else if(e.key==='Enter'||e.key==='=')calculate();
+    else if(e.key==='Escape')clearAll();
+    else if(e.key==='Backspace'){current=current.length>1?current.slice(0,-1):'0';disp();}
+  });
+</script>
+</body>
+</html>
